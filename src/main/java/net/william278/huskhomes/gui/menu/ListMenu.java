@@ -176,7 +176,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
                                         }
                                     }
                                 }
-                                setPositionMaterial(position, newItem.getItemMeta());
+                                setPositionMaterial(position, newItem.getData());
                                 click.getGui().draw();
                             }
 
