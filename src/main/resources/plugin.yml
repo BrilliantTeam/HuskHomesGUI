@@ -6,6 +6,7 @@ api-version: 1.16
 depend: [ 'HuskHomes' ]
 author: 'William278'
 website: 'https://william278.net/'
+folia-supported: true
 
 commands:
   huskhomesgui:
