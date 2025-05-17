@@ -135,7 +135,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
     @NotNull
     private DynamicGuiElement getPositionButton(@NotNull HuskHomesGui plugin, @NotNull SavedPosition position) {
         return new DynamicGuiElement('e', (viewer) -> new StaticGuiElement('e',
-                new ItemStack(getPositionMaterial(position).orElse(plugin.getSettings().getDefaultIcon())),
+                new ItemStack(getPositionItemStack(position, plugin.getSettings().getDefaultIcon())),
                 (click) -> {
                     if (click.getWhoClicked() instanceof Player player) {
                         final OnlineUser user = api.adaptUser(player);
@@ -176,7 +176,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
                                         }
                                     }
                                 }
-                                setPositionMaterial(position, newItem.getType());
+                                setPositionMaterial(position, newItem);
                                 click.getGui().draw();
                             }
 
