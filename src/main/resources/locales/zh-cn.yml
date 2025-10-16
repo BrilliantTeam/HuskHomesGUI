@@ -38,4 +38,6 @@ pagination_next_page: '[下一页 \\(%nextpage%\\) ▶](green)'
 pagination_last_page: '[尾页 \\(%pages%\\) ⏩](green)'
 menu_controls_title: '[操作说明:](gray)'
 menu_controls_details: '[  • 左键点击: 传送](gray)\n[  • 右键点击: 编辑](gray)\n[  • 放置物品: 设置图标](gray)\n'
-
+teleport_function_button: '[返回遊戲選單](white)'
+filter_server_current: '[點擊後僅顯示](white)\n[當前分流傳送點](#f6e0a4)'
+filter_server_all: '[點擊後將顯示](white)\n[全部的傳送點](#7ad3ff)'

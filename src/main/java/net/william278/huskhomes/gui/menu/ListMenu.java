@@ -30,13 +30,15 @@ import net.william278.huskhomes.user.User;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-
-import static net.william278.huskhomes.gui.config.Locales.textWrap;
+import java.io.File;
+import java.util.stream.Collectors;
 
 /**
  * A menu for displaying a list of saved positions
@@ -49,6 +51,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
     private final List<T> positions;
     private final Type type;
     private final int pageNumber = 1;
+    private boolean filterByServer = false; // Flag to control server filtering
 
     @NotNull
     public static ListMenu<Home> homes(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner) {
@@ -82,28 +85,61 @@ public class ListMenu<T extends SavedPosition> extends Menu {
                         "ppppppppp",
                         "ppppppppp",
                         "ppppppppp",
-                        "bl  i  ne"},
+                        "cl  i  nf"},
                 6 - plugin.getSettings().getMenuSize(), 6);
     }
 
     @Override
     protected Consumer<InventoryGui> buildMenu() {
         return (menu) -> {
-            // Add filler items
-            menu.setFiller(new ItemStack(type.getFillerMaterial(plugin.getSettings()), 1));
+            // Set filler to STICK with custom model data 20036
+            ItemStack fillerStick = new ItemStack(Material.STICK);
+            ItemMeta fillerMeta = fillerStick.getItemMeta();
+            if (fillerMeta != null) {
+                fillerMeta.setCustomModelData(20036);
+            }
+            fillerStick.setItemMeta(fillerMeta);
+            menu.setFiller(fillerStick);
+
+            // Add button at row 6, slot 1: STICK with CMD 20004, executes /gmp gui open 傳送功能.yml
+            menu.addElement(new StaticGuiElement('c',
+                    createCustomStick(20004),
+                    (click) -> {
+                        if (click.getWhoClicked() instanceof Player player) {
+                            player.performCommand("gmp gui open 傳送功能.yml");
+                        }
+                        return true;
+                    },
+                    plugin.getLocales().getLocale("teleport_function_button")));
+
+            // Add button at row 6, slot 9: STICK with CMD 20053, toggles server filter
+            menu.addElement(new DynamicGuiElement('f', (viewer) -> new StaticGuiElement('f',
+                    createCustomStick(20053),
+                    (click) -> {
+                        if (click.getWhoClicked() instanceof Player player) {
+                            filterByServer = !filterByServer; // Toggle filter flag
+                            // Rebuild the position group with filtered positions
+                            menu.removeElement('p');
+                            menu.addElement(getPositionGroup(plugin, positions, menu));
+                            menu.setPageNumber(0); // Reset to first page
+                            menu.draw(); // Redraw menu to update display
+                        }
+                        return true;
+                    },
+                    plugin.getLocales().getLocale(filterByServer ? "filter_server_all" : "filter_server_current"))));
 
             // Add pagination handling
-            menu.addElement(getPositionGroup(plugin, positions));
+            menu.addElement(getPositionGroup(plugin, positions, menu));
             menu.addElement(new GuiPageElement('b',
                     new ItemStack(plugin.getSettings().getPaginateFirstPage()),
                     GuiPageElement.PageAction.FIRST,
                     plugin.getLocales().getLocale("pagination_first_page")));
             menu.addElement(new GuiPageElement('l',
-                    new ItemStack(plugin.getSettings().getPaginatePreviousPage()),
+                    createCustomStick(20037),
                     GuiPageElement.PageAction.PREVIOUS,
                     plugin.getLocales().getLocale("pagination_previous_page")));
             menu.addElement(new GuiPageElement('n',
-                    new ItemStack(plugin.getSettings().getPaginateNextPage()),
+                    createCustomStick(20048),
                     GuiPageElement.PageAction.NEXT,
                     plugin.getLocales().getLocale("pagination_next_page")));
             menu.addElement(new GuiPageElement('e',
@@ -122,11 +158,44 @@ public class ListMenu<T extends SavedPosition> extends Menu {
         };
     }
 
-    // Get the GUI group of position select buttons
+    // Helper method: Create a STICK with specified custom model data
     @NotNull
-    private GuiElementGroup getPositionGroup(@NotNull HuskHomesGui plugin, @NotNull List<T> positions) {
+    private ItemStack createCustomStick(int customModelData) {
+        ItemStack stick = new ItemStack(Material.STICK);
+        ItemMeta meta = stick.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(customModelData);
+        }
+        stick.setItemMeta(meta);
+        return stick;
+    }
+
+    /**
+     * 從 plugins/HuskHomes/server.yml 讀取伺服器名稱
+     */
+    @NotNull
+    private String getServerNameFromConfig(@NotNull HuskHomesGui plugin) {
+        File configFile = new File(plugin.getDataFolder().getParentFile(), "HuskHomes/server.yml");
+        if (!configFile.exists()) {
+            plugin.getLogger().warning("server.yml not found, falling back to default server name");
+            return "default";
+        }
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+        String serverName = config.getString("name", "default");
+        return serverName != null ? serverName : "default";
+    }
+
+    // Modified getPositionGroup to support server filtering
+    @NotNull
+    private GuiElementGroup getPositionGroup(@NotNull HuskHomesGui plugin, @NotNull List<T> positions, @NotNull InventoryGui menu) {
         final GuiElementGroup group = new GuiElementGroup('p');
-        positions.forEach(position -> group.addElement(getPositionButton(plugin, position)));
+        List<T> filteredPositions = filterByServer ?
+                positions.stream()
+                        .filter(position -> position.getServer().equals(getServerNameFromConfig(plugin)))
+                        .collect(Collectors.toList()) :
+                positions;
+        filteredPositions.forEach(position -> group.addElement(getPositionButton(plugin, position)));
         return group;
     }
 
@@ -193,7 +262,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
                                                 return true;
                                             }
                                             if (!player.getUniqueId().equals(home.getOwner().getUuid())
-                                                && !player.hasPermission(EDIT_HOME_OTHER_PERMISSION)) {
+                                                    && !player.hasPermission(EDIT_HOME_OTHER_PERMISSION)) {
                                                 return true;
                                             }
                                         }
@@ -218,7 +287,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
 
                 // description
                 (!position.getMeta().getDescription().isBlank() ?
-                        plugin.getLocales().getLocale("item_description", textWrap(plugin, position.getMeta().getDescription()))
+                        plugin.getLocales().getLocale("item_description", position.getMeta().getDescription())
                         : plugin.getLocales().getLocale("item_description_blank")),
 
                 // player name
