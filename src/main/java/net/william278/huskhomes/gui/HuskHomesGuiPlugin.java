@@ -19,7 +19,6 @@
 
 package net.william278.huskhomes.gui;
 
-import net.kyori.adventure.platform.AudienceProvider;
 import net.william278.annotaml.Annotaml;
 import net.william278.desertwell.util.Version;
 import net.william278.huskhomes.gui.config.Locales;
@@ -51,9 +50,6 @@ public interface HuskHomesGuiPlugin {
             throw new IllegalStateException("Failed to load config file", e);
         }
     }
-
-    @NotNull
-    AudienceProvider getAudiences();
 
     @NotNull
     Version getPluginVersion();

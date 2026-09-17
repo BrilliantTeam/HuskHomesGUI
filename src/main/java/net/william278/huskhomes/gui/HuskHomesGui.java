@@ -19,8 +19,6 @@
 
 package net.william278.huskhomes.gui;
 
-import net.kyori.adventure.platform.AudienceProvider;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.william278.desertwell.util.Version;
 import net.william278.huskhomes.gui.command.HuskHomesGuiCommand;
 import net.william278.huskhomes.gui.config.Locales;
@@ -33,14 +31,10 @@ import java.util.Objects;
 import java.util.logging.Level;
 
 public class HuskHomesGui extends JavaPlugin implements HuskHomesGuiPlugin {
-    private BukkitAudiences adventure;
     private Settings settings;
     private Locales locales;
 
     public void onEnable() {
-        // Load audiences
-        this.adventure = BukkitAudiences.create(this);
-
         // Load settings and locales
         this.reloadConfigFiles();
 
@@ -55,12 +49,6 @@ public class HuskHomesGui extends JavaPlugin implements HuskHomesGuiPlugin {
     public void reloadConfigFiles() {
         this.settings = loadSettings();
         this.locales = loadLocales();
-    }
-
-    @Override
-    @NotNull
-    public AudienceProvider getAudiences() {
-        return adventure;
     }
 
     @Override

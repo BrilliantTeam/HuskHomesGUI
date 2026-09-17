@@ -21,7 +21,16 @@ package net.william278.huskhomes.gui.menu;
 
 import de.themoep.inventorygui.InventoryGui;
 import de.themoep.inventorygui.StaticGuiElement;
-import net.wesjd.anvilgui.AnvilGUI;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.registry.data.dialog.ActionButton;
+import io.papermc.paper.registry.data.dialog.DialogBase;
+import io.papermc.paper.registry.data.dialog.action.DialogAction;
+import io.papermc.paper.registry.data.dialog.body.DialogBody;
+import io.papermc.paper.registry.data.dialog.input.DialogInput;
+import io.papermc.paper.registry.data.dialog.type.DialogType;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickCallback;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.william278.huskhomes.gui.HuskHomesGui;
 import net.william278.huskhomes.position.Home;
 import net.william278.huskhomes.position.SavedPosition;
@@ -35,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static net.william278.huskhomes.gui.config.Locales.textWrap;
 
@@ -133,81 +143,62 @@ public class EditMenu<T extends SavedPosition> extends Menu {
                             Integer.toString((int) Math.floor(position.getY())),
                             Integer.toString((int) Math.floor(position.getZ())))));
 
-            // Editing name (Via anvil)
+            // Editing name
             menu.addElement(new StaticGuiElement('n',
                     new ItemStack(plugin.getSettings().getEditorEditNameButtonIcon()),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             this.close(api.adaptUser(player));
-                            new AnvilGUI.Builder()
-                                    .title(plugin.getLocales().getLocale("edit_name_title", position.getName()))
-                                    .itemLeft(new ItemStack(positionIcon))
-                                    .text(position.getName())
-                                    .onClose(playerInAnvil -> this.show(api.adaptUser(player)))
-                                    .onClick((slot, stateSnapshot) -> {
-                                        if (slot == AnvilGUI.Slot.OUTPUT) {
-                                            if (stateSnapshot.getText() != null) {
-                                                try {
-                                                    if (position instanceof Home home) {
-                                                        api.renameHome(home, stateSnapshot.getText());
-                                                    } else if (position instanceof Warp warp) {
-                                                        api.renameWarp(warp, stateSnapshot.getText());
-                                                    }
-                                                } catch (ValidationException e) {
-                                                    return List.of();
-                                                }
+                            prompt(player, plugin.getLocales().getLocale("edit_name_title", position.getName()),
+                                    plugin.getLocales().getLocale("edit_name_button"), positionIcon,
+                                    position.getName(), text -> {
+                                        try {
+                                            if (position instanceof Home home) {
+                                                api.renameHome(home, text);
+                                            } else if (position instanceof Warp warp) {
+                                                api.renameWarp(warp, text);
                                             }
-                                            position.getMeta().setName(stateSnapshot.getText());
-
-                                            // Refresh menu title
-                                            this.close(api.adaptUser(player));
-                                            this.destroy();
-                                            new EditMenu<>(plugin, position, parentMenu, pageNumber).show(api.adaptUser(player));
-                                            return List.of();
+                                        } catch (ValidationException e) {
+                                            return false;
                                         }
-                                        return List.of();
-                                    })
-                                    .plugin(plugin)
-                                    .open(player);
+                                        position.getMeta().setName(text);
+
+                                        // Refresh menu title
+                                        this.destroy();
+                                        new EditMenu<>(plugin, position, parentMenu, pageNumber).show(api.adaptUser(player));
+                                        return true;
+                                    });
                         }
                         return true;
                     },
                     plugin.getLocales().getLocale("edit_name_button")));
 
-            // Editing description (Via anvil)
+            // Editing description
             menu.addElement(new StaticGuiElement('d',
                     new ItemStack(plugin.getSettings().getEditorEditDescriptionButtonIcon()),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             this.close(api.adaptUser(player));
-                            new AnvilGUI.Builder()
-                                    .title(plugin.getLocales().getLocale("edit_description_title", position.getName()))
-                                    .itemLeft(new ItemStack(positionIcon))
+                            prompt(player, plugin.getLocales().getLocale("edit_description_title", position.getName()),
+                                    plugin.getLocales().getLocale("edit_description_button"), positionIcon,
                                     // Description or default_description
-                                    .text(!position.getMeta().getDescription().isBlank() ?
+                                    !position.getMeta().getDescription().isBlank() ?
                                             position.getMeta().getDescription()
-                                            : plugin.getLocales().getLocale("edit_description_default_input"))
-                                    .onClose(playerInAnvil -> this.show(api.adaptUser(player)))
-                                    .onClick((slot, stateSnapshot) -> {
-                                        if (slot == AnvilGUI.Slot.OUTPUT) {
-                                            if (stateSnapshot.getText() != null) {
-                                                try {
-                                                    if (position instanceof Home home) {
-                                                        api.setHomeDescription(home, stateSnapshot.getText());
-                                                    } else if (position instanceof Warp warp) {
-                                                        api.setWarpDescription(warp, stateSnapshot.getText());
-                                                    }
-                                                } catch (ValidationException e) {
-                                                    return List.of();
-                                                }
+                                            : plugin.getLocales().getLocale("edit_description_default_input"),
+                                    text -> {
+                                        try {
+                                            if (position instanceof Home home) {
+                                                api.setHomeDescription(home, text);
+                                            } else if (position instanceof Warp warp) {
+                                                api.setWarpDescription(warp, text);
                                             }
-                                            position.getMeta().setDescription(stateSnapshot.getText());
-                                            this.show(api.adaptUser(player));
+                                        } catch (ValidationException e) {
+                                            return false;
                                         }
-                                        return List.of();
-                                    })
-                                    .plugin(plugin)
-                                    .open(player);
+                                        position.getMeta().setDescription(text);
+                                        this.show(api.adaptUser(player));
+                                        return true;
+                                    });
                         }
                         return true;
                     },
@@ -295,6 +286,35 @@ public class EditMenu<T extends SavedPosition> extends Menu {
                             .getLocale("home_owner_name", home.getOwner().getUsername()) : ""
             ));
         };
+    }
+
+    private void prompt(@NotNull Player player, @NotNull String title, @NotNull String confirm,
+                        @NotNull ItemStack icon, @NotNull String initial, @NotNull Predicate<String> submit) {
+        final LegacyComponentSerializer legacy = LegacyComponentSerializer.legacySection();
+        final ClickCallback.Options once = ClickCallback.Options.builder()
+                .uses(1).lifetime(ClickCallback.DEFAULT_LIFETIME).build();
+        player.showDialog(Dialog.create(builder -> builder.empty()
+                .base(DialogBase.builder(legacy.deserialize(title))
+                        .canCloseWithEscape(false)
+                        .body(List.of(DialogBody.item(icon).build()))
+                        .inputs(List.of(DialogInput.text("text", Component.empty())
+                                .labelVisible(false)
+                                .initial(initial)
+                                .maxLength(Math.max(256, initial.length()))
+                                .build()))
+                        .build())
+                .type(DialogType.confirmation(
+                        ActionButton.builder(legacy.deserialize(confirm))
+                                .action(DialogAction.customClick((view, audience) -> {
+                                    final String text = view.getText("text");
+                                    if (!submit.test(text)) {
+                                        prompt(player, title, confirm, icon, text, submit);
+                                    }
+                                }, once))
+                                .build(),
+                        ActionButton.builder(legacy.deserialize(plugin.getLocales().getLocale("back_button")))
+                                .action(DialogAction.customClick((view, audience) -> this.show(api.adaptUser(player)), once))
+                                .build()))));
     }
 
 }

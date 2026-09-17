@@ -20,7 +20,6 @@
 package net.william278.huskhomes.gui.command;
 
 import de.themoep.minedown.adventure.MineDown;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.william278.desertwell.about.AboutMenu;
@@ -29,7 +28,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -65,20 +63,13 @@ public class HuskHomesGuiCommand implements CommandExecutor, TabExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                              @NotNull String label, @NotNull String[] args) {
-        final Audience audience;
-        if (sender instanceof Player player) {
-            audience = plugin.getAudiences().player(player.getUniqueId());
-        } else {
-            audience = plugin.getAudiences().console();
-        }
-
         final String subCommand = args.length >= 1 ? args[0] : "";
         if (subCommand.equals("reload")) {
             plugin.reloadConfigFiles();
-            audience.sendMessage(new MineDown("[[HuskHomesGUI]](#00fb9a bold) [Reloaded config files!](#00fb9a)")
+            sender.sendMessage(new MineDown("[[HuskHomesGUI]](#00fb9a bold) [Reloaded config files!](#00fb9a)")
                     .toComponent());
         } else {
-            audience.sendMessage(aboutMenu.toComponent());
+            sender.sendMessage(aboutMenu.toComponent());
         }
         return true;
     }
