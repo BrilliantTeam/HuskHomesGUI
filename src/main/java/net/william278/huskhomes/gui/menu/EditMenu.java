@@ -37,7 +37,6 @@ import net.william278.huskhomes.position.SavedPosition;
 import net.william278.huskhomes.position.Warp;
 import net.william278.huskhomes.user.OnlineUser;
 import net.william278.huskhomes.util.ValidationException;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -54,16 +53,15 @@ import static net.william278.huskhomes.gui.config.Locales.textWrap;
 public class EditMenu<T extends SavedPosition> extends Menu {
 
     private final T position;
-    private final Type type;
     private final ListMenu<T> parentMenu;
     private final int pageNumber;
 
     @NotNull
     private static String[] getEditMenuLayout() {
         return new String[]{
-                "aa     ab",
-                "aundip ra",
-                "aa     aa"
+                "        b",
+                " undip r ",
+                "         "
         };
     }
 
@@ -71,7 +69,6 @@ public class EditMenu<T extends SavedPosition> extends Menu {
         super(plugin, plugin.getLocales().getLocale(
                         position instanceof Home ? "home_editor_title" : "warp_editor_title", position.getName()),
                 getEditMenuLayout());
-        this.type = position instanceof Home ? Type.HOME : Type.WARP;
         this.position = position;
         this.parentMenu = parentMenu;
         this.pageNumber = pageNumber;
@@ -92,22 +89,14 @@ public class EditMenu<T extends SavedPosition> extends Menu {
     @Override
     protected Consumer<InventoryGui> buildMenu() {
         return (menu) -> {
-            final ItemStack positionIcon = new ItemStack(getPositionMaterial(position)
-                    .orElse(plugin.getSettings().getDefaultIcon()));
+            final ItemStack positionIcon = getPositionItemStack(position, plugin.getSettings().getDefaultIcon());
             menu.setCloseAction(i -> false);
 
-            // Filler background icons
-            menu.addElement(new StaticGuiElement('a',
-                    new ItemStack(switch (type) {
-                        case HOME, PUBLIC_HOME -> plugin.getSettings().getHomeEditorFillerIcon();
-                        case WARP -> plugin.getSettings().getWarpEditorFillerIcon();
-                    }),
-                    " "
-            ));
+            menu.setFiller(filler());
 
             // Return to the parent list menu
             menu.addElement(new StaticGuiElement('b',
-                    new ItemStack(plugin.getSettings().getEditorBackButtonIcon()),
+                    icon(20004),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             final OnlineUser user = api.adaptUser(player);
@@ -122,7 +111,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
 
             // Relocating
             menu.addElement(new StaticGuiElement('u',
-                    new ItemStack(plugin.getSettings().getEditorEditLocationButtonIcon()),
+                    icon(20058),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             try {
@@ -145,7 +134,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
 
             // Editing name
             menu.addElement(new StaticGuiElement('n',
-                    new ItemStack(plugin.getSettings().getEditorEditNameButtonIcon()),
+                    icon(21021),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             this.close(api.adaptUser(player));
@@ -175,7 +164,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
 
             // Editing description
             menu.addElement(new StaticGuiElement('d',
-                    new ItemStack(plugin.getSettings().getEditorEditDescriptionButtonIcon()),
+                    icon(21118),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             this.close(api.adaptUser(player));
@@ -212,7 +201,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
             // Editing home privacy
             if (position instanceof Home home) {
                 menu.addElement(new StaticGuiElement('p',
-                        new ItemStack(plugin.getSettings().getEditorEditPrivacyButtonIcon()),
+                        icon(home.isPublic() ? 20054 : 20056),
                         (click) -> {
                             if (click.getWhoClicked() instanceof Player player) {
                                 try {
@@ -234,7 +223,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
 
             // Deleting
             menu.addElement(new StaticGuiElement('r',
-                    new ItemStack(plugin.getSettings().getEditorDeleteButtonIcon()),
+                    icon(21002),
                     (click) -> {
                         switch (click.getType()) {
                             case RIGHT, DROP -> { // DROP: geyser player throw item
@@ -269,7 +258,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
 
             // Controls display
             menu.addElement(new StaticGuiElement('i',
-                    new ItemStack(Material.OAK_SIGN),
+                    icon(21135),
                     // Name
                     plugin.getLocales().getLocale("item_info_name", position.getName()),
                     // World name
@@ -283,7 +272,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
                             Integer.toString((int) Math.floor(position.getZ()))),
                     // Owner name (Only for homes)
                     position instanceof Home home ? plugin.getLocales()
-                            .getLocale("home_owner_name", home.getOwner().getUsername()) : ""
+                            .getLocale("home_owner_name", home.getOwner().getName()) : ""
             ));
         };
     }

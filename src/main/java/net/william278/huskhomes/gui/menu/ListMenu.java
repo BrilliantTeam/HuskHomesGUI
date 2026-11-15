@@ -30,7 +30,6 @@ import net.william278.huskhomes.user.User;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -56,7 +55,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
     @NotNull
     public static ListMenu<Home> homes(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner) {
         return new ListMenu<>(plugin, homes, Type.HOME,
-                plugin.getLocales().getLocale("homes_menu_title", owner.getUsername()));
+                plugin.getLocales().getLocale("homes_menu_title", owner.getName()));
     }
 
     @NotNull
@@ -92,18 +91,11 @@ public class ListMenu<T extends SavedPosition> extends Menu {
     @Override
     protected Consumer<InventoryGui> buildMenu() {
         return (menu) -> {
-            // Set filler to STICK with custom model data 20036
-            ItemStack fillerStick = new ItemStack(Material.STICK);
-            ItemMeta fillerMeta = fillerStick.getItemMeta();
-            if (fillerMeta != null) {
-                fillerMeta.setCustomModelData(20036);
-            }
-            fillerStick.setItemMeta(fillerMeta);
-            menu.setFiller(fillerStick);
+            menu.setFiller(filler());
 
             // Add button at row 6, slot 1: STICK with CMD 20004, executes /gmp gui open 傳送功能.yml
             menu.addElement(new StaticGuiElement('c',
-                    createCustomStick(20004),
+                    icon(20004),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             player.performCommand("gmp gui open 傳送功能.yml");
@@ -114,7 +106,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
 
             // Add button at row 6, slot 9: STICK with CMD 20053, toggles server filter
             menu.addElement(new DynamicGuiElement('f', (viewer) -> new StaticGuiElement('f',
-                    createCustomStick(20053),
+                    icon(20053),
                     (click) -> {
                         if (click.getWhoClicked() instanceof Player player) {
                             filterByServer = !filterByServer; // Toggle filter flag
@@ -130,44 +122,24 @@ public class ListMenu<T extends SavedPosition> extends Menu {
 
             // Add pagination handling
             menu.addElement(getPositionGroup(plugin, positions, menu));
-            menu.addElement(new GuiPageElement('b',
-                    new ItemStack(plugin.getSettings().getPaginateFirstPage()),
-                    GuiPageElement.PageAction.FIRST,
-                    plugin.getLocales().getLocale("pagination_first_page")));
             menu.addElement(new GuiPageElement('l',
-                    createCustomStick(20037),
+                    icon(20037),
                     GuiPageElement.PageAction.PREVIOUS,
                     plugin.getLocales().getLocale("pagination_previous_page")));
             menu.addElement(new GuiPageElement('n',
-                    createCustomStick(20048),
+                    icon(20048),
                     GuiPageElement.PageAction.NEXT,
                     plugin.getLocales().getLocale("pagination_next_page")));
-            menu.addElement(new GuiPageElement('e',
-                    new ItemStack(plugin.getSettings().getPaginateLastPage()),
-                    GuiPageElement.PageAction.LAST,
-                    plugin.getLocales().getLocale("pagination_last_page")));
             menu.setPageNumber(pageNumber);
 
             // Add controls information
             if (plugin.getSettings().doShowMenuControls()) {
                 menu.addElement(new StaticGuiElement('i',
-                        new ItemStack(plugin.getSettings().getControlsIcon()),
+                        icon(20007),
                         plugin.getLocales().getLocale("menu_controls_title"),
                         plugin.getLocales().getLocale("menu_controls_details")));
             }
         };
-    }
-
-    // Helper method: Create a STICK with specified custom model data
-    @NotNull
-    private ItemStack createCustomStick(int customModelData) {
-        ItemStack stick = new ItemStack(Material.STICK);
-        ItemMeta meta = stick.getItemMeta();
-        if (meta != null) {
-            meta.setCustomModelData(customModelData);
-        }
-        stick.setItemMeta(meta);
-        return stick;
     }
 
     /**
@@ -293,7 +265,7 @@ public class ListMenu<T extends SavedPosition> extends Menu {
                 // player name
                 (position instanceof Home home ?
                         type == Type.PUBLIC_HOME ?
-                                plugin.getLocales().getLocale("home_owner_name", home.getOwner().getUsername())
+                                plugin.getLocales().getLocale("home_owner_name", home.getOwner().getName())
                                 : ""
                         : ""),
 

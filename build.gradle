@@ -3,14 +3,13 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
     id 'java'
     id 'com.gradleup.shadow' version '9.2.2'
-    id 'org.cadixdev.licenser' version '0.6.1'
     id 'org.ajoberstar.grgit' version '5.2.1'
 }
 
-group 'net.william278'
-version "$ext.plugin_version${versionMetadata()}"
-description "$ext.plugin_description"
-defaultTasks 'licenseFormat', 'build'
+group = 'net.william278'
+version = "$ext.plugin_version${versionMetadata()}"
+description = "$ext.plugin_description"
+defaultTasks 'build'
 
 ext {
     set 'version', version.toString()
@@ -20,17 +19,17 @@ ext {
 repositories {
     mavenCentral()
 
-    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
-    maven { url 'https://jitpack.io/' }
-    maven { url 'https://repo.minebench.de/' }
-    maven { url 'https://repo.codemc.io/repository/maven-snapshots/' }
-    maven { url 'https://repo.papermc.io/repository/maven-public/' }
-    maven { url 'https://repo.william278.net/releases' }
-    maven { url 'https://repo.william278.net/snapshots' }
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url = 'https://jitpack.io/' }
+    maven { url = 'https://repo.minebench.de/' }
+    maven { url = 'https://repo.codemc.io/repository/maven-snapshots/' }
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://repo.william278.net/releases' }
+    maven { url = 'https://repo.william278.net/snapshots' }
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.3.build.181-stable'
     compileOnly 'org.jetbrains:annotations:24.0.1'
     compileOnly 'net.william278.huskhomes:huskhomes-bukkit:4.11'
 
@@ -46,7 +45,7 @@ dependencies {
 }
 
 compileJava.options.encoding = 'UTF-8'
-compileJava.options.release.set 21
+compileJava.options.release.set 25
 
 processResources {
     filesNotMatching(['**/*.png', '**/*.svg']) {
@@ -80,12 +79,6 @@ jar {
 
 test {
     useJUnitPlatform()
-}
-
-license {
-    header = rootProject.file('HEADER')
-    include '**/*.java'
-    newLine = true
 }
 
 logger.lifecycle("Building HuskHomesGUI ${version} by William278")

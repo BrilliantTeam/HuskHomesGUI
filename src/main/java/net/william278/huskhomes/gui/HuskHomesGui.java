@@ -43,7 +43,7 @@ public class HuskHomesGui extends JavaPlugin implements HuskHomesGuiPlugin {
         Objects.requireNonNull(getCommand("huskhomesgui")).setExecutor(new HuskHomesGuiCommand(this));
 
         // Log to console
-        getLogger().log(Level.INFO, "Successfully enabled HuskHomes v" + getDescription().getVersion());
+        getLogger().log(Level.INFO, "Successfully enabled HuskHomes v" + getPluginMeta().getVersion());
     }
 
     public void reloadConfigFiles() {
@@ -54,7 +54,7 @@ public class HuskHomesGui extends JavaPlugin implements HuskHomesGuiPlugin {
     @Override
     @NotNull
     public Version getPluginVersion() {
-        return Version.fromString(getDescription().getVersion(), "-");
+        return Version.fromString(getPluginMeta().getVersion(), "-");
     }
 
     @Override

@@ -20,20 +20,19 @@
 package net.william278.huskhomes.gui.menu;
 
 import de.themoep.inventorygui.InventoryGui;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.CustomModelData;
 import net.william278.huskhomes.api.HuskHomesAPI;
 import net.william278.huskhomes.gui.HuskHomesGui;
-import net.william278.huskhomes.gui.config.Settings;
 import net.william278.huskhomes.position.Home;
 import net.william278.huskhomes.position.SavedPosition;
 import net.william278.huskhomes.position.Warp;
 import net.william278.huskhomes.user.OnlineUser;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public abstract class Menu {
@@ -73,19 +72,18 @@ public abstract class Menu {
         gui.destroy();
     }
 
-    /**
-     * Get the material to use for a saved position by icon tag
-     *
-     * @param position The saved position
-     * @return The material to use if found
-     */
-    @Deprecated
-    protected Optional<Material> getPositionMaterial(@NotNull SavedPosition position) {
-        final Map<String, String> tags = position.getMeta().getTags();
-        if (tags.containsKey(TAG_KEY)) {
-            return Optional.ofNullable(Material.matchMaterial(tags.get(TAG_KEY)));
-        }
-        return Optional.empty();
+    @NotNull
+    protected static ItemStack icon(int model) {
+        final ItemStack item = new ItemStack(Material.STICK);
+        item.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addFloat(model).build());
+        return item;
+    }
+
+    @NotNull
+    protected static ItemStack filler() {
+        final ItemStack item = icon(20036);
+        item.editMeta(meta -> meta.setHideTooltip(true));
+        return item;
     }
 
     /**
@@ -96,18 +94,15 @@ public abstract class Menu {
      */
     protected ItemStack getPositionItemStack(@NotNull SavedPosition position, @NotNull Material fallbackMaterial) {
         final Map<String, String> tags = position.getMeta().getTags();
-        Material material = fallbackMaterial;
-        if (tags.containsKey(TAG_KEY))
-            material = Material.matchMaterial(tags.get(TAG_KEY));
-
-        ItemStack itemStack = new ItemStack(material);
-
+        final Material material = tags.containsKey(TAG_KEY) ? Material.matchMaterial(tags.get(TAG_KEY)) : null;
+        final ItemStack itemStack = new ItemStack(material != null && material.isItem() ? material : fallbackMaterial);
         if (tags.containsKey(CUSTOM_MODEL_DATA_KEY)) {
-            ItemMeta meta = itemStack.getItemMeta();
-            meta.setCustomModelData(Integer.valueOf(tags.get(CUSTOM_MODEL_DATA_KEY)));
-            itemStack.setItemMeta(meta);
+            try {
+                itemStack.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData()
+                        .addFloat(Float.parseFloat(tags.get(CUSTOM_MODEL_DATA_KEY))).build());
+            } catch (NumberFormatException ignored) {
+            }
         }
-
         return itemStack;
     }
 
@@ -120,10 +115,11 @@ public abstract class Menu {
     protected void setPositionMaterial(@NotNull SavedPosition position, @NotNull ItemStack itemStack) {
         final Map<String, String> tags = position.getMeta().getTags();
         tags.put(TAG_KEY, itemStack.getType().getKey().toString());
-        if (itemStack.hasItemMeta()) {
-            ItemMeta itemMeta = itemStack.getItemMeta();
-            if (itemMeta != null && itemMeta.hasCustomModelData())
-                tags.put(CUSTOM_MODEL_DATA_KEY, String.valueOf(itemMeta.getCustomModelData()));
+        final CustomModelData model = itemStack.getData(DataComponentTypes.CUSTOM_MODEL_DATA);
+        if (model != null && !model.floats().isEmpty()) {
+            tags.put(CUSTOM_MODEL_DATA_KEY, String.valueOf(model.floats().getFirst()));
+        } else {
+            tags.remove(CUSTOM_MODEL_DATA_KEY);
         }
 
         if (position instanceof Warp warp) {
@@ -141,15 +137,7 @@ public abstract class Menu {
     protected enum Type {
         HOME,
         PUBLIC_HOME,
-        WARP;
-
-        public Material getFillerMaterial(@NotNull Settings settings) {
-            return switch (this) {
-                case HOME -> settings.getHomesFillerItem();
-                case PUBLIC_HOME -> settings.getPublicHomesFillerItem();
-                case WARP -> settings.getWarpsFillerItem();
-            };
-        }
+        WARP
     }
 
 }
